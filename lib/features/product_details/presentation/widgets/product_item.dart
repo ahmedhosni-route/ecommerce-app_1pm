@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProductItem extends StatelessWidget {
-  const ProductItem({super.key, required this.imageUrl, this.onTap});
+  const ProductItem({super.key, required this.imageUrl, required this.id});
   final String imageUrl;
-  final void Function()? onTap;
+  final String id;
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
@@ -21,7 +21,7 @@ class ProductItem extends StatelessWidget {
         ),
         alignment: Alignment.topRight,
         child: HeartButton(
-          onTap: onTap,
+          id: id,
         ),
       ),
     );

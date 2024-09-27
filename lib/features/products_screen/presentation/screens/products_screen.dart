@@ -1,7 +1,15 @@
+import 'dart:developer';
+
 import 'package:ecommerce_app/core/resources/values_manager.dart';
+import 'package:ecommerce_app/core/widget/loading.dart';
+import 'package:ecommerce_app/features/products_screen/presentation/manager/cubit.dart';
+import 'package:ecommerce_app/features/products_screen/presentation/manager/state.dart';
 import 'package:ecommerce_app/features/products_screen/presentation/widgets/custom_product_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 
+import '../../../../core/get_it/get_it.dart';
 import '../../../../core/resources/assets_manager.dart';
 import '../../../../core/widget/home_screen_app_bar.dart';
 
@@ -12,42 +20,71 @@ class ProductsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    return Scaffold(
-      appBar: const HomeScreenAppBar(
-        automaticallyImplyLeading: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppPadding.p16),
-        child: Column(
-          children: [
-            Expanded(
-              child: GridView.builder(
-                itemCount: 20,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 7 / 9,
-                ),
-                itemBuilder: (context, index) {
-                  return CustomProductWidget(
-                    image: ImageAssets.categoryHomeImage,
-                    title: "Nike Air Jordon",
-                    price: 1100,
-                    rating: 4.7,
-                    discountPercentage: 10,
-                    height: height,
-                    width: width,
-                    description:
-                        "Nike is a multinational corporation that designs, develops, and sells athletic footwear ,apparel, and accessories",
-                  );
-                },
-                scrollDirection: Axis.vertical,
+    ProductDataClass ids =
+        ModalRoute.of(context)!.settings.arguments as ProductDataClass;
+    return BlocProvider(
+      create: (context) => getIt<ProductCubit>()
+        ..getProducts(categoryId: ids.categoryId, brandId: ids.brandId),
+      child: Scaffold(
+        appBar: const HomeScreenAppBar(
+          automaticallyImplyLeading: true,
+        ),
+        body: BlocConsumer<ProductCubit, ProductState>(
+          buildWhen: (previous, current) {
+            if (current is GetProductSuccessState) {
+              return true;
+            }
+            return false;
+          },
+          listener: (context, state) {
+            if (state is GetProductLoadingState) {
+              Loading.show(context);
+            }
+            if (state is GetProductSuccessState) {
+              Loading.hide(context);
+            }
+          },
+          builder: (context, state) {
+            var cubit = ProductCubit.get(context);
+            return Padding(
+              padding: const EdgeInsets.all(AppPadding.p16),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: GridView.builder(
+                      itemCount: cubit.products.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 7 / 10,
+                      ),
+                      itemBuilder: (context, index) {
+                        var product = cubit.products[index];
+                        return CustomProductWidget(
+                          height: height,
+                          width: width,
+                          productData: product,
+                          cubit: cubit,
+                        );
+                      },
+                      scrollDirection: Axis.vertical,
+                    ),
+                  )
+                ],
               ),
-            )
-          ],
+            );
+          },
         ),
       ),
     );
   }
+}
+
+class ProductDataClass {
+  String? categoryId;
+  String? brandId;
+
+  ProductDataClass(this.categoryId, this.brandId);
 }
